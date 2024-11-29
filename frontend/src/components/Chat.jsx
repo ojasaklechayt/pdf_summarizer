@@ -1,27 +1,57 @@
-import { useState } from 'react';
-import UserAvatar from '../assets/user-avatar.svg'; // User avatar image
-import AIAvatar from '../assets/aibackground.svg'; // Bot avatar image
+/* eslint-disable no-unused-vars */
+import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+import UserAvatar from '../assets/user-avatar.svg';
+import AIAvatar from '../assets/aibackground.svg';
 import SendArrow from '../assets/sendarrow.svg';
+
+const socket = io('http://localhost:3000'); // Replace with your server URL
 
 function Chat() {
     const [messages, setMessages] = useState([
-        { text: 'Hello, how can I help you today?', sender: 'user' },
-        { text: 'I need some information about your services.', sender: 'bot' },
-        { text: 'Sure, what specifically are you looking for?', sender: 'user' },
-        { text: 'Our own Large Language Model (LLM) is a type of AI that can learn from data. We have trained it on 7 billion parameters which makes it better than other LLMs. We are featured on aiplanet.com and work with leading enterprises to help them use AI securely and privately. We have a Generative AI Stack which helps reduce the hallucinations in LLMs and allows enterprises to use AI in their applications.', sender: 'bot' },
+        { text: 'Hello, how can I help you today?', sender: 'bot' },
     ]);
 
     const [inputMessage, setInputMessage] = useState('');
+    const [documentId, setDocumentId] = useState(null);
+
+    useEffect(() => {
+        // Listen for answers from the server (bot's response)
+        socket.on('receive-answer', (answer) => {
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { text: answer, sender: 'bot' },
+            ]);
+        });
+
+        // Cleanup socket listener on unmount
+        return () => {
+            socket.off('receive-answer');
+        };
+    }, []);
 
     const handleSendMessage = () => {
         if (inputMessage.trim()) {
-            setMessages([...messages, { text: inputMessage, sender: 'user' }]);
+            // Add the user message to the chat
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { text: inputMessage, sender: 'user' },
+            ]);
+
+            // Send the message to the backend server
+            if (documentId) {
+                socket.emit('ask-question', { documentId, question: inputMessage });
+            } else {
+                socket.emit('ask-question', { question: inputMessage });
+            }
+
+            // Clear the input field
             setInputMessage('');
         }
     };
 
     return (
-        <div className="flex flex-col h-screen w-full bg-white pt-20 pb-20"> {/* Adjusted pt-16 for header space */}
+        <div className="flex flex-col h-screen w-full bg-white pt-20 pb-20">
             {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {/* Map through the messages to display them */}
@@ -29,13 +59,11 @@ function Chat() {
                     <div key={index} className="flex items-start space-x-4 lg:pl-16">
                         {/* Display avatar depending on sender */}
                         <img
-                            src={message.sender === 'bot' ? AIAvatar : UserAvatar} // Alternate avatars based on sender
+                            src={message.sender === 'bot' ? AIAvatar : UserAvatar}
                             alt={`${message.sender} Avatar`}
                             className="w-10 h-10 rounded-full object-cover"
                         />
-                        <div
-                            className={'p-3 rounded-lg text-black text-start'}
-                        >
+                        <div className="p-3 rounded-lg text-black text-start">
                             {message.text}
                         </div>
                     </div>
