@@ -1,12 +1,12 @@
-
 import './App.css'
-import PDFSummarizer from './components/PDFSummarizer'
-
+import Header from './components/Header'
+import Chat from './components/Chat';
 function App() {
 
   return (
     <>
-      <PDFSummarizer />
+      <Header />
+      <Chat />
     </>
   )
 }
