@@ -107,8 +107,10 @@ Before running the project, ensure the following are installed:
    ```
 6. Open the project in your browser at `http://localhost:3000` to begin interacting with the chatbot.
 
-[![Run the Project (Video)](https://youtu.be/hkA7b9P4q9M)  
-*Video walkthrough of the project setup and running instructions*](https://youtu.be/hkA7b9P4q9M)
+---
+### Video Walkthrough
+
+### Link - https://youtu.be/hkA7b9P4q9M
 
 ---
 
