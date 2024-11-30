@@ -92,11 +92,14 @@ io.on('connection', (socket) => {
     });
 
     socket.on('ask-question', async ({ documentId, question }) => {
+        console.log(`Received question: "${question}" for documentId: ${documentId}`)
+
         try {
             const document = await getDocumentById(documentId);
             console.log(document);
             if (document) {
                 const answer = await processQuestion(document.filename, question);
+                console.log(answer);
                 socket.emit('receive-answer', answer);
             } else {
                 socket.emit('receive-answer', 'Document not found');
@@ -112,6 +115,6 @@ io.on('connection', (socket) => {
     });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);
 });
