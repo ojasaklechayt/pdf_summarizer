@@ -6,8 +6,9 @@ This project implements a chatbot interface that allows users to interact with a
 
 The backend is built with **Node.js**, leveraging **Socket.io** for real-time communication, **Multer** for file storage, and **PostgreSQL** for storing metadata.
 
-![Project Overview Image](path_to_image)  
-*Description of the image (e.g., screenshot of the project interface)*
+![image](https://github.com/user-attachments/assets/91b1970a-33c2-480e-9808-a34fc7a7c90e)
+
+![image](https://github.com/user-attachments/assets/06325229-0b75-4bb1-8c3f-55b9d2e867a6)
 
 ---
 
@@ -37,9 +38,6 @@ The backend is built with **Node.js**, leveraging **Socket.io** for real-time co
 - **Multer**: Middleware for handling file uploads in **Node.js**, used for storing files on the server.
 - **PostgreSQL**: A relational database management system used to store metadata related to uploaded files.
 - **Local File Storage**: Files are stored locally on the server, with metadata being stored in the PostgreSQL database.
-
-![Backend Tech Stack](path_to_image)  
-*Description of the image (e.g., diagram illustrating the tech stack used in the backend)*
 
 ---
 
