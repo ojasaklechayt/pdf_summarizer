@@ -17,6 +17,7 @@ function Chat() {
     const { documentId } = useContext(DocumentContext);
 
     useEffect(() => {
+        // Listening for the server's answer when received
         socket.on('receive-answer', (response) => {
             console.log('Received from server:', response);
             handleBotMessage(response);
@@ -35,6 +36,7 @@ function Chat() {
         };
     }, []);
 
+    // Function to handle the bot's response with typing effect
     const handleBotMessage = (message) => {
         // Add a temporary typing indicator
         setMessages((prevMessages) => [
@@ -68,7 +70,9 @@ function Chat() {
         }, 1000); // 1-second delay after loading state
     };
 
+    // Function to handle sending a message
     const handleSendMessage = () => {
+        console.log(documentId);
         if (inputMessage.trim()) {
             if (!documentId) {
                 toast.error('Document Upload Required', {
@@ -78,14 +82,17 @@ function Chat() {
                 return;
             }
 
+            // Display the user's message
             setMessages((prevMessages) => [
                 ...prevMessages,
                 { text: inputMessage, sender: 'user' },
             ]);
 
             console.log('Sending documentId:', documentId);
+            // Emit the document ID and user's question to the server
             socket.emit('ask-question', { documentId, question: inputMessage });
 
+            // Clear the input field
             setInputMessage('');
         }
     };

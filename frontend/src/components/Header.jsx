@@ -41,9 +41,9 @@ function Header() {
                         description: `File: ${file.name}`,
                         duration: 2000,
                     });
-                    console.log('File uploaded successfully', data);
+                    console.log('File uploaded successfully', data.document);
 
-                    setDocumentId(data.document.id);
+                    setDocumentId(data.document.documentId);
                 } else {
                     // Error toast using Sonner
                     toast.error('Error uploading PDF', {

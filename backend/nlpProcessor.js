@@ -7,7 +7,8 @@ async function processQuestion(pdfFilename, question) {
     try {
         const genAI = new GoogleGenerativeAI(`${process.env.GEMINI_API}`);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const text = await extractTextFromPDF(pdfFilename) + question;
+        const pdfText = await extractTextFromPDF(pdfFilename);
+        let text = pdfText + "\n" + "Question: " + question;
         const result = await model.generateContent(text);
         const answer = result.response.text();
         // const answer = "Hello Client!!";

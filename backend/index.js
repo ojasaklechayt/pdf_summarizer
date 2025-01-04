@@ -3,11 +3,9 @@ const express = require('express');
 const multer = require('multer');
 const http = require('http');
 const { Server } = require('socket.io');
-const { Pool } = require('pg');
 const fs = require('fs');
 const { processQuestion } = require('./nlpProcessor');
-const { uploadPDF } = require('./utils/fileUtils');
-const { getDocumentById } = require('./models/documentModel');
+const { uploadPDF, getDocumentById } = require('./config/firebaseUtils');
 const path = require('path');
 const cors = require('cors');
 
@@ -19,59 +17,46 @@ const io = new Server(server, {
         methods: ["GET", "POST"],
     },
 });
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 
+// Middleware
 app.use(cors());
+app.use(express.urlencoded({ extended: false }));
 
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-});
+// Ensure 'uploads' directory exists
+if (!fs.existsSync('./uploads')) {
+    fs.mkdirSync('./uploads');
+}
 
-// Check PostgreSQL connection
-pool.connect()
-    .then(() => {
-        console.log('Connected to PostgreSQL database');
-    })
-    .catch((err) => {
-        console.error('Error connecting to PostgreSQL database:', err);
-        process.exit(1); // Exit the process if DB connection fails
-    });
-
+// Multer configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, './uploads');
     },
     filename: (req, file, cb) => {
-        const uniquesuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniquesuffix + path.extname(file.originalname));
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
-
 const upload = multer({ storage: storage });
 
-app.use(express.urlencoded({ extended: false }));
-
-if (!fs.existsSync('./uploads')) {
-    fs.mkdirSync('./uploads');
-}
-
+// Routes
 app.get('/', (req, res) => {
     res.send('Welcome to the backend of PDF Summarizer');
 });
 
+// Upload Route
 app.post('/upload', upload.single('pdf'), async (req, res) => {
     try {
         const { originalname, filename } = req.file;
         const uploadDate = new Date();
+
+        // Upload PDF metadata to Firebase
         const docData = await uploadPDF(filename, originalname, uploadDate);
 
-        // Emit the document ID to all connected sockets immediately after the file upload
-        io.emit('document-uploaded', docData.id);
-        
+        // Emit the document metadata to all connected sockets
+        io.emit('document-uploaded', docData);
+
         res.status(200).json({
             message: 'PDF uploaded successfully',
             document: docData
@@ -82,24 +67,26 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     }
 });
 
+// Socket.IO Handlers
 io.on('connection', (socket) => {
-    console.log('A user connected');
+    console.log('A user connected:', socket.id);
 
-    // Store the document ID when the socket receives it
+    // Store document ID in socket
     socket.on('store-document', (documentId) => {
         socket.documentId = documentId;
         console.log(`Document ID stored for socket: ${socket.id}`);
     });
 
+    // Handle question requests
     socket.on('ask-question', async ({ documentId, question }) => {
-        console.log(`Received question: "${question}" for documentId: ${documentId}`)
+        console.log(`Received question: "${question}" for documentId: ${documentId}`);
 
         try {
+            console.log(documentId, question)
             const document = await getDocumentById(documentId);
-            console.log(document);
+
             if (document) {
                 const answer = await processQuestion(document.filename, question);
-                console.log(answer);
                 socket.emit('receive-answer', answer);
             } else {
                 socket.emit('receive-answer', 'Document not found');
@@ -110,11 +97,13 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Handle disconnection
     socket.on('disconnect', () => {
-        console.log('User disconnected');
+        console.log('User disconnected:', socket.id);
     });
 });
 
+// Start Server
 server.listen(PORT, () => {
-    console.log(`Server running on ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
