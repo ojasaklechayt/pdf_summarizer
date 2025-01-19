@@ -5,30 +5,36 @@ const serviceAccount = require('./pdf-summarizer-155fd-firebase-adminsdk-fsey9-e
 // Initialize Firebase Admin SDK
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_PROJECT_DB // Replace <your-project-id> with your Firebase project ID
+    databaseURL: process.env.FIREBASE_PROJECT_DB
 });
 
 // Get a reference to the Realtime Database
 const db = admin.database();
 
-
-async function uploadPDF(filename, originalname, uploadDate) {
+async function uploadPDF(filepath, originalname, uploadDate, publicUrl) {
     try {
         const documentRef = db.ref('documents').push();
         const documentId = documentRef.key;
 
-        await documentRef.set({
-            filename: filename,
-            original_name: originalname,
-            upload_date: uploadDate
-        });
+        // Create the document data object
+        const documentData = {
+            filepath: filepath,
+            filename: originalname,
+            upload_date: uploadDate.toISOString(),
+            public_url: publicUrl
+        };
+
+        await documentRef.set(documentData);
         
         const snapshot = await documentRef.get();
         if (!snapshot.exists()) {
             throw new Error('Document not found after saving.');
         }
 
-        return { documentId, ...snapshot.val() };
+        return { 
+            documentId, 
+            ...documentData 
+        };
     } catch (error) {
         console.error('Error saving PDF metadata:', error);
         throw error;
@@ -37,14 +43,14 @@ async function uploadPDF(filename, originalname, uploadDate) {
 
 async function getDocumentById(documentId) {
     try {
-        const documentRef = db.ref(`documents/${documentId}`)
-        const snapshot = await documentRef.once('value')
+        const documentRef = db.ref(`documents/${documentId}`);
+        const snapshot = await documentRef.once('value');
 
         if (snapshot.exists()) {
-            const documentData = snapshot.val()
-            return documentData
+            const documentData = snapshot.val();
+            return documentData;
         } else {
-            console.warn('No Document found for ID: ', documentId)
+            console.warn('No Document found for ID: ', documentId);
             return null;
         }
     } catch (error) {
@@ -52,4 +58,5 @@ async function getDocumentById(documentId) {
         throw error;
     }
 }
+
 module.exports = { uploadPDF, getDocumentById };

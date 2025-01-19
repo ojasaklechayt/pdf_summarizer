@@ -36,7 +36,6 @@ function Header() {
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Success toast using Sonner
                     toast.success('PDF uploaded successfully!', {
                         description: `File: ${file.name}`,
                         duration: 2000,
@@ -45,14 +44,12 @@ function Header() {
 
                     setDocumentId(data.document.documentId);
                 } else {
-                    // Error toast using Sonner
                     toast.error('Error uploading PDF', {
                         description: data.message || 'Please try again.',
                         duration: 2000,
                     });
                 }
             } catch (error) {
-                // Error toast for network/fetch errors
                 toast.error('Upload Failed', {
                     description: 'An error occurred during file upload.',
                     duration: 2000,

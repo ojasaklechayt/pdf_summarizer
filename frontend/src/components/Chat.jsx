@@ -19,8 +19,8 @@ function Chat() {
     useEffect(() => {
         // Listening for the server's answer when received
         socket.on('receive-answer', (response) => {
-            console.log('Received from server:', response);
-            handleBotMessage(response);
+            console.log('Received from server:', response.answer);
+            handleBotMessage(response.answer);
         });
 
         socket.on('connect_error', (error) => {
