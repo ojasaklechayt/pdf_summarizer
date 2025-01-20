@@ -1,6 +1,9 @@
 const pdfParse = require('pdf-parse');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getFile } = require('./config/supabaseUtils');
+const Tesseract = require('tesseract.js');
+const { createCanvas, loadImage } = require('canvas');
+const pdf2pic = require('pdf2pic');
 
 async function processQuestion(filepath, question) {
     try {
@@ -13,15 +16,21 @@ async function processQuestion(filepath, question) {
         }
         console.log('File successfully retrieved.');
 
-        // Step 2: Extract text from the PDF
-        const data = await pdfParse(pdfBuffer);
-
-        if (!data || !data.text) {
-            throw new Error('Failed to extract text from the PDF.');
+        // Step 2: Try to extract text using pdf-parse first
+        let pdfText;
+        try {
+            const data = await pdfParse(pdfBuffer);
+            pdfText = data.text;
+            console.log('PDF text extracted successfully using pdf-parse.');
+        } catch (pdfParseError) {
+            console.log('pdf-parse failed, falling back to Tesseract OCR...', pdfParseError);
+            pdfText = await extractTextWithTesseract(pdfBuffer);
+            console.log('PDF text extracted successfully using Tesseract OCR.');
         }
-        const pdfText = data.text;
 
-        console.log('PDF text extracted successfully.');
+        if (!pdfText) {
+            throw new Error('Failed to extract text from the PDF using both methods.');
+        }
 
         // Step 3: Initialize Gemini AI
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
@@ -37,13 +46,42 @@ async function processQuestion(filepath, question) {
         const answer = result.response.text();
 
         console.log('Response successfully generated.');
-
-        console.log(answer);
-        // Step 6: Return the answer
         return answer;
     } catch (error) {
         console.error('Error in processQuestion:', error.message);
         throw new Error(`Failed to process question: ${error.message}`);
+    }
+}
+
+// Helper function to extract text using Tesseract OCR
+async function extractTextWithTesseract(pdfBuffer) {
+    try {
+        // Convert PDF to images
+        const converter = new pdf2pic({
+            density: 300,
+            format: "png",
+            width: 2480,
+            height: 3508
+        });
+
+        // Convert PDF pages to images
+        const images = await converter.convertBuffer(pdfBuffer);
+        let fullText = '';
+
+        // Process each image with Tesseract
+        for (const image of images) {
+            const { data: { text } } = await Tesseract.recognize(
+                image.buffer,
+                'eng',
+                { logger: m => console.log(m) }
+            );
+            fullText += text + '\n';
+        }
+
+        return fullText;
+    } catch (error) {
+        console.error('Error in Tesseract text extraction:', error);
+        throw new Error(`Failed to extract text using Tesseract: ${error.message}`);
     }
 }
 
@@ -57,14 +95,14 @@ async function extractTextFromPDF(filepath) {
             throw new Error('PDF file not found in storage');
         }
 
-        // Parse PDF
-        const data = await pdfParse(pdfBuffer);
-        
-        if (!data || !data.text) {
-            throw new Error('Failed to extract text from PDF');
+        // Try pdf-parse first
+        try {
+            const data = await pdfParse(pdfBuffer);
+            return data.text;
+        } catch (pdfParseError) {
+            console.log('pdf-parse failed, falling back to Tesseract OCR...', pdfParseError);
+            return await extractTextWithTesseract(pdfBuffer);
         }
-
-        return data.text;
     } catch (error) {
         console.error('Error extracting text from PDF:', error);
         throw new Error(`Failed to extract text from PDF: ${error.message}`);
