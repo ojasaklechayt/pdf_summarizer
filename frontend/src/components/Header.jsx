@@ -6,7 +6,7 @@ import { DocumentContext } from '../context/DocumentProvider';
 import useSocket from '../useSocket';
 import { Toaster, toast } from 'sonner'; // Import Sonner toast
 
-const API = "http://localhost:3000";
+const API = "https://pdf-summarizer-uldt.onrender.com";
 
 function Header() {
     const [name, setName] = useState('');
