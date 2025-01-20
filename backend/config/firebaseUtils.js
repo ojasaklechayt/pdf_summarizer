@@ -1,10 +1,9 @@
 const admin = require('firebase-admin');
 require('dotenv').config()
-const serviceAccount = require('./pdf-summarizer-155fd-firebase-adminsdk-fsey9-e40089a121.json');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert(process.env.SERVICEACCOUNT),
     databaseURL: process.env.FIREBASE_PROJECT_DB
 });
 
