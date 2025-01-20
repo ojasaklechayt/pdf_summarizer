@@ -10,16 +10,20 @@ const { processQuestion } = require('./nlpProcessor')
 
 const app = express();
 const server = http.createServer(app);
+const corsOptions = {
+    origin: ['https://pdf-summarizer-lac.vercel.app', 'http://localhost:5000'],
+    methods: ["GET", "POST"],
+    credentials: true
+}
+
+app.use(cors(corsOptions));
+
 const io = new Server(server, {
-    cors: {
-        origin: "https://pdf-summarizer-lac.vercel.app/",
-        methods: ["GET", "POST"],
-    },
+    cors: corsOptions
 });
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -83,7 +87,7 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
 
     } catch (error) {
         console.error('Error in upload route:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: error.message || 'Error uploading PDF',
             success: false
         });
@@ -94,21 +98,21 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
 app.get('/file/:documentId', async (req, res) => {
     try {
         const document = await getDocumentById(req.params.documentId);
-        
+
         if (!document) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'Document not found',
-                success: false 
+                success: false
             });
         }
 
         console.log(document.filepath)
         const fileData = await getFile(document.filepath);
-        
+
         if (!fileData) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'File not found in storage',
-                success: false 
+                success: false
             });
         }
 
@@ -118,9 +122,9 @@ app.get('/file/:documentId', async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching file:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: error.message || 'Error fetching file',
-            success: false 
+            success: false
         });
     }
 });
