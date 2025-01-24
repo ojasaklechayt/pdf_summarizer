@@ -11,7 +11,7 @@ const { processQuestion } = require('./nlpProcessor')
 const app = express();
 const server = http.createServer(app);
 const corsOptions = {
-    origin: ['https://pdf-summarizer-lac.vercel.app', 'http://localhost:5000'],
+    origin: ['https://pdf-summarizer-lac.vercel.app', 'http://localhost:5000', 'http://localhost:5173'],
     methods: ["GET", "POST"],
     credentials: true
 }
